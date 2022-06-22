@@ -4,16 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+
+	"github.com/saichudin/golang-starter/model/web"
+	"github.com/saichudin/golang-starter/service"
 )
-
-type Product struct {
-	Id    int
-	Name  string
-	Price int
-}
-
-var products []Product
-var productId int = 0
 
 func CrudBasic() {
 	http.HandleFunc("/products/", handlerProducts)
@@ -49,8 +43,10 @@ func handlerProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func productIndex(w http.ResponseWriter, r *http.Request) {
+	productService := service.NewProductService()
+	productResp := productService.FindAll()
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(products)
+	err := json.NewEncoder(w).Encode(productResp)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -60,31 +56,28 @@ func productShow(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id, _ := strconv.Atoi(query.Get("id"))
 
-	for _, product := range products {
-		if product.Id == id {
-			w.Header().Set("Content-Type", "application/json")
-			err := json.NewEncoder(w).Encode(product)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		}
+	productService := service.NewProductService()
+	productResp := productService.FindById(id)
+
+	w.Header().Set("Content-Type", "application/json")
+	errEncode := json.NewEncoder(w).Encode(productResp)
+	if errEncode != nil {
+		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
 	}
 }
 
 func productCreate(w http.ResponseWriter, r *http.Request) {
-	var product Product
-
-	errDecode := json.NewDecoder(r.Body).Decode(&product)
+	productService := service.NewProductService()
+	decoder := json.NewDecoder(r.Body)
+	productRequest := web.ProductRequest{}
+	errDecode := decoder.Decode(&productRequest)
 	if errDecode != nil {
 		http.Error(w, errDecode.Error(), http.StatusBadRequest)
 	}
-
-	productId++
-	product.Id = productId
-	products = append(products, product)
+	productResp := productService.Create(productRequest)
 
 	w.Header().Set("Content-Type", "application/json")
-	errEncode := json.NewEncoder(w).Encode(product)
+	errEncode := json.NewEncoder(w).Encode(productResp)
 	if errEncode != nil {
 		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
 	}
@@ -94,36 +87,32 @@ func productUpdate(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	id, _ := strconv.Atoi(query.Get("id"))
 
-	for index, product := range products {
-		errDecode := json.NewDecoder(r.Body).Decode(&product)
-		if errDecode != nil {
-			http.Error(w, errDecode.Error(), http.StatusBadRequest)
-		}
+	productService := service.NewProductService()
+	decoder := json.NewDecoder(r.Body)
+	productRequest := web.ProductRequest{}
+	errDecode := decoder.Decode(&productRequest)
+	if errDecode != nil {
+		http.Error(w, errDecode.Error(), http.StatusBadRequest)
+	}
 
-		if product.Id == id {
-			products[index].Name = product.Name
-			products[index].Price = product.Price
+	productResp := productService.Update(id, productRequest)
 
-			_, err := w.Write([]byte("Success update data"))
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		}
+	w.Header().Set("Content-Type", "application/json")
+	errEncode := json.NewEncoder(w).Encode(productResp)
+	if errEncode != nil {
+		http.Error(w, errEncode.Error(), http.StatusInternalServerError)
 	}
 }
 
 func productDelete(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
-
 	id, _ := strconv.Atoi(query.Get("id"))
 
-	for index, product := range products {
-		if product.Id == id {
-			products = append(products[:index], products[index+1:]...)
-			_, err := w.Write([]byte("Success delete data"))
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-			}
-		}
+	productService := service.NewProductService()
+	productService.Delete(id)
+
+	_, err := w.Write([]byte("Success delete data"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
