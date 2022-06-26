@@ -15,3 +15,6 @@ Empty repo for github classroom starter
 - `make tests`
 - `make run`
 - `make clean`
+
+## RUN with echo fw
+go run ./cmd/echo/main.go 
