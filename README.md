@@ -16,5 +16,15 @@ Empty repo for github classroom starter
 - `make run`
 - `make clean`
 
+## Endpoint
+- GET /product
+- GET /product/:id | id = int
+- POST /product | body {"name" : "es teh", "price" : 500}
+- PUT /product/:id | body {"name" : "es teh segar", "price" : 700}
+- DELETE /product/:id | id = int
+
 ## RUN with echo fw
 go run ./cmd/echo/main.go 
+
+## RUN with echo fw and GORM
+go run ./cmd/gorm/main.go 
